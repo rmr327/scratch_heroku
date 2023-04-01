@@ -428,5 +428,5 @@ if __name__ == '__main__':
         # replace with images/illusion.jpg when deploying
         image = Image.open('/Users/rakeenrouf/PycharmProjects/games/images/illusion.jpg')
         st.image(image, caption='Time is constant.')
-    except KeyError:
+    except FileNotFoundError:
         pass
