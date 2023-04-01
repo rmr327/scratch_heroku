@@ -79,9 +79,17 @@ def scaled_plot_helper(m1_, s1_, m2_, s2_, all_scores_, team_1, team_2, id_):
     st.bokeh_chart(column(szn_team_2_graph_pdf, szn_team_2_graph_cdf))
 
 
-def raw_plots_helper(t, team_, p, clr):
-    src = ColumnDataSource(data=dict(x=t['GAME_DATE'], y=t['PTS'], dt=t['GAME_DATE'].dt.strftime('%Y-%m-%d %H:%M:%S')))
-    x = p.line('x', 'y', line_width=2, legend_label=f'{team_} Raw Points', line_color=clr, source=src)
+def raw_plots_helper(t, team_, p, clr, mode=0, src_=None):
+    if mode == 0:
+        title = f'{team_} Raw Points'
+        src = ColumnDataSource(data=dict(x=t['GAME_DATE'], y=t['PTS'],
+                                         dt=t['GAME_DATE'].dt.strftime('%Y-%m-%d %H:%M:%S')))
+    else:
+        title = team_
+        src = ColumnDataSource(data=dict(x=t['GAME_DATE'], y=t[src_],
+                                         dt=t['GAME_DATE'].dt.strftime('%Y-%m-%d %H:%M:%S')))
+
+    x = p.line('x', 'y', line_width=2, legend_label=title, line_color=clr, source=src)
     p.scatter('x', 'y', line_width=4, line_color=clr, source=src)
     hov = HoverTool(mode='vline', tooltips=[("Date", "@dt}"), ("Points", "@y")], renderers=[x])
     p.add_tools(hov)
@@ -318,7 +326,7 @@ if __name__ == '__main__':
 
             pan = PanTool(dimensions='width')
             p_r = figure(title=f"Season Points Scaled", x_axis_label='Date', y_axis_label='points',
-                         x_axis_type='datetime', plot_width=1250, plot_height=600,
+                         x_axis_type='datetime', plot_width=1000, plot_height=600,
                          tools=[pan, 'xwheel_zoom'], active_scroll='xwheel_zoom')
             p_r = raw_plots_helper(t1, team__1, p_r, 'black')
             p_r = raw_plots_helper(t2, team__2, p_r, 'red')
@@ -393,7 +401,7 @@ if __name__ == '__main__':
 
             pan = PanTool(dimensions='width')
             p_r = figure(title=f"Season Points", x_axis_label='Date', y_axis_label='points', x_axis_type='datetime',
-                         plot_width=1250, plot_height=600, tools=[pan, 'xwheel_zoom'], active_scroll='xwheel_zoom')
+                         plot_width=1000, plot_height=600, tools=[pan, 'xwheel_zoom'], active_scroll='xwheel_zoom')
             p_r = raw_plots_helper(t1, team__1, p_r, 'black')
             p_r = raw_plots_helper(t2, team__2, p_r, 'red')
 
@@ -410,20 +418,18 @@ if __name__ == '__main__':
                     st.dataframe(t2s)
                 st.bokeh_chart(p_r)
 
-                # Get a list of the column names
-                cols1 = list(t1.columns)
-                cols2 = list(t2.columns)
-
                 # Create a multiselect widget to allow the user to select columns
-                selected_cols_1 = st.multiselect("Select columns to plot:", cols1)
+                column2 = st.selectbox("Select column to plot", t2.columns)
 
-                # If at least one column is selected, create the plot
-                if selected_cols_1:
-                    f = figure(title="Selected Columns", x_axis_label="X", y_axis_label="Y")
-                    source1 = ColumnDataSource(t1[selected_cols_1])
-                    f.line(x="x", y="y", source=source1, color="blue", legend_label="Data Frame 1")
-                    # Display the plot in Streamlit
-                    st.bokeh_chart(f)
+                pan_ = PanTool(dimensions='width')
+                f = figure(title=f"{column2} Time series", x_axis_label='DT', y_axis_label=column2,
+                           x_axis_type='datetime', plot_width=1000, plot_height=600, tools=[pan_, 'xwheel_zoom'],
+                           active_scroll='xwheel_zoom')
+                f = raw_plots_helper(t1, f"{team__1} {column2}", f, 'black', 1, column2)
+                f = raw_plots_helper(t2, f"{team__2} {column2}", f, 'red', 1, column2)
+
+                st.bokeh_chart(f, use_container_width=True)
+
             except ValueError:
                 st.text('Raw data not available')
 
