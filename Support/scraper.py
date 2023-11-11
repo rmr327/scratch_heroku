@@ -1,4 +1,4 @@
-from BasketballReferenceScraper.BasketballReferenceLinks import BasketBallReferenceLinks
+from BasketballReferenceLinks import BasketBallReferenceLinks
 from datetime import datetime, timedelta
 import calendar
 from requests import get
