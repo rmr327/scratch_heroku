@@ -5,6 +5,7 @@ from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource, HoverTool, CrosshairTool, PanTool
 from bokeh.layouts import column
 from PIL import Image
+from BasketballReferenceScraper.scraper import Scraper
 
 
 @st.cache_data
@@ -23,7 +24,8 @@ def load_data(seaso_n, season__type, toda_y, start, end):
     dd_ = datetime(year=toda_y.year, month=toda_y.month, day=toda_y.day)
     games_ = get_games_on_date(games_df=basketball_ref_games_, date=dd_, abbreviation_df=team_abbreviation_)
 
-    return teams_df, easter_teams_, western_teams_, team_log_dict_, to_merge_df, games_, basketball_ref_games_
+    return teams_df, easter_teams_, western_teams_, team_log_dict_, to_merge_df, games_, basketball_ref_games_, \
+        team_abbreviation_
 
 
 def h_2_h_stats_helper(dat, dict_, team_, id_):
@@ -129,13 +131,14 @@ def row_heatmap(row):
 
 if __name__ == '__main__':
     today_ = date.today()
+    bs_scraper = Scraper()
 
     st.set_page_config(layout="wide")
-    st.title('NBA Stats Dashboard')
+    st.title('NBA Stats Dashboard. By: Rakeen Rouf')
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        season_year = st.text_input('Season Year', '2022-23')
+        season_year = st.text_input('Season Year', '2023-24')
         if len(season_year) != 7:
             st.text('Wrong input for Season Year')
             exit()
@@ -143,7 +146,7 @@ if __name__ == '__main__':
             st.text('Wrong input for Season Year')
             exit()
     with col2:
-        ss = st.date_input("Start Day", date(2022, 10, 1))
+        ss = st.date_input("Start Day", date(2023, 10, 1))
     with col3:
         se = st.date_input("End Day", today_)
     with col4:
@@ -152,15 +155,15 @@ if __name__ == '__main__':
     seaso_n_ = season_year
     season__type_ = options
 
-    teams__df, easter__teams_, western__teams_, team__log_dict_, to_merge__df, games, basketball_ref_games = \
-        load_data(seaso_n_, season__type_, today_, ss, se)
+    teams__df, easter__teams_, western__teams_, team__log_dict_, to_merge__df, games, basketball_ref_games, \
+        team_abbreviation = load_data(seaso_n_, season__type_, today_, ss, se)
 
     for game in games:
         team__1 = game[0]
         team__2 = game[1]
         if st.checkbox(f"{team__1} VS {team__2}"):
             # Define the main tabs
-            tabs = ["score_diff_probability", "Head to Head", "scaled_points_stats", "Raw Stats"]
+            tabs = ["Injury Report", "score_diff_probability", "Head to Head", "scaled_points_stats", "Raw Stats"]
             main_tab = st.radio("Select a tab", tabs)
 
             team_1__id = get_team_id(teams__df, team__1)
@@ -442,9 +445,15 @@ if __name__ == '__main__':
                 except ValueError:
                     st.text('Raw data not available')
 
+            if main_tab == "Injury Report":
+                injury_report = bs_scraper.get_injury_report()
+                teams = team_abbreviation.loc[team_abbreviation['abbreviation'].isin([team__1, team__2])]['full_name']
+                injury_report = injury_report.loc[injury_report['Team'].isin(teams.values)]
+                st.dataframe(injury_report)
+
     try:
         # replace with images/illusion.jpg when deploying
-        image = Image.open('/Users/rakeenrouf/PycharmProjects/games/images/illusion.jpg')
+        image = Image.open('../images/illusion.jpg')
         st.image(image, caption='Time is constant.')
     except FileNotFoundError:
         pass
